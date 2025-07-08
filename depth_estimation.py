@@ -1,43 +1,40 @@
-# depth_estimation.py
-# This script demonstrates how to use the ZoeDepth model for depth estimation.
-
+# depth_estimation_batch.py
 import torch
 from torchvision.transforms import ToTensor, Resize, Compose
 from PIL import Image
 import numpy as np
 import os
-
 from zoedepth.utils.config import get_config
 from zoedepth.models.builder import build_model
 from zoedepth.utils.misc import colorize
 
-# 1. Load ZoeDepth
+# Setup
+img_dir = "./data/bicycle/images"  # path to your training images
+output_dir = "./data/bicycle/depths"  # where to save the .npy depth maps
+os.makedirs(output_dir, exist_ok=True)
+
+# Load ZoeDepth model
 config = get_config("zoedepth", "infer")
 model = build_model(config)
 model.eval().cuda()
 
-# 2. Load your style image
-# img_path = ".\gaussian-splatting\style\starrynight.jpg" # "C:\Users\cslabwin\gaussian-splatting\style\starrynight.jpg"
-# img_path = "./gaussian_splatting/style/starrynight.jpg"
-# img_path = r'C:\Users\cslabwin\gaussian_splatting\style\starrynight.jpg'
-img_path = '.\gaussian-splatting\style\starrynight.jpg'
-
-image = Image.open(img_path).convert("RGB")
-# image = Image.fromarray(colorize(image))I
+# Transform
 transform = Compose([Resize((512, 512)), ToTensor()])
-img_tensor = transform(image).unsqueeze(0).cuda()  # shape: [1, 3, H, W]
 
-# 3. Predict depth
-with torch.no_grad():
-    pred = model.infer(img_tensor)[0][0]  # shape: [H, W]
+# Process all images
+for fname in os.listdir(img_dir):
+    if not fname.lower().endswith((".png", ".jpg", ".jpeg")):
+        continue
 
-# 4. Save raw depth as .npy
-np.save("style_depth.npy", pred.cpu().numpy())
-print("Saved style_depth.npy")
+    img_path = os.path.join(img_dir, fname)
+    image = Image.open(img_path).convert("RGB")
+    img_tensor = transform(image).unsqueeze(0).cuda()
 
-# 5. Save preview (optional)
-# depth_colored = colorize(pred).convert("RGB")
-depth_colored_np = colorize(pred)  # Returns numpy array
-depth_colored = Image.fromarray(depth_colored_np)
-depth_colored.save("style_depth_preview.png")
-print("Saved style_depth_preview.png")
+    with torch.no_grad():
+        pred = model.infer(img_tensor)[0][0]  # shape [H, W]
+
+    # Save .npy depth map
+    out_name = os.path.splitext(fname)[0] + ".npy"
+    np.save(os.path.join(output_dir, out_name), pred.cpu().numpy())
+
+    print(f"Saved: {out_name}")
