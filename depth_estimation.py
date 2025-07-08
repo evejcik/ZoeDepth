@@ -19,7 +19,7 @@ model = build_model(config)
 model.eval().cuda()
 
 # Transform
-transform = Compose([Resize((512, 512)), ToTensor()])
+transform = ToTensor()
 
 # Process all images
 for fname in os.listdir(img_dir):
@@ -38,3 +38,14 @@ for fname in os.listdir(img_dir):
     np.save(os.path.join(output_dir, out_name), pred.cpu().numpy())
 
     print(f"Saved: {out_name}")
+
+# Also generate depth for style image
+style_path = "./style/starrynight.jpg"
+style_img = Image.open(style_path).convert("RGB")
+style_tensor = transform(style_img).unsqueeze(0).cuda()
+
+with torch.no_grad():
+    style_pred = model.infer(style_tensor)[0][0]
+
+np.save("./style/style_depth.npy", style_pred.cpu().numpy())
+print("Saved: style_depth.npy")
