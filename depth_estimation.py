@@ -9,8 +9,8 @@ from zoedepth.models.builder import build_model
 from zoedepth.utils.misc import colorize
 
 # Setup
-img_dir = "./data/bicycle/images"  # path to your training images
-output_dir = "./data/bicycle/depths"  # where to save the .npy depth maps
+img_dir = "../gaussian-splatting/data/bicycle/images"  # path to your training images
+output_dir = "../gaussian-splatting/data/bicycle/depths"  # where to save the .npy depth maps
 os.makedirs(output_dir, exist_ok=True)
 
 # Load ZoeDepth model
